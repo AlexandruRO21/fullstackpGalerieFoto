@@ -15,7 +15,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use("/uploads", express.static("uploads"));
 
-// MySQL Database Connection
+//conex db
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
@@ -29,10 +29,10 @@ db.connect((err) => {
   console.log("✅ MySQL Connected...");
 });
 
-// Secret Key for JWT
+//jwt key
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
-// Middleware for protecting routes
+//middleware (+ protectie)
 const authenticate = (req, res, next) => {
   const token = req.cookies.token;
   if (!token) return res.status(401).json({ error: "Unauthorized" });
@@ -44,7 +44,7 @@ const authenticate = (req, res, next) => {
   });
 };
 
-// **SIGNUP Route**
+//signup
 app.post(
   "/signup",
   [
@@ -58,7 +58,7 @@ app.post(
 
     const { name, email, password } = req.body;
     try {
-      // Check if user already exists
+      //interogare useri in db
       const checkUserSQL = "SELECT * FROM users WHERE email = ?";
       db.query(checkUserSQL, [email], async (err, results) => {
         if (results.length > 0) return res.status(400).json({ error: "User already exists" });
@@ -77,7 +77,7 @@ app.post(
   }
 );
 
-// **LOGIN Route**
+//login
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -103,12 +103,12 @@ app.post("/login", async (req, res) => {
   });
 });
 
-// **LOGOUT Route**
+//logout cookie 
 app.post("/logout", (req, res) => {
   res.clearCookie("token").json({ message: "Logged out successfully" });
 });
 
-// **GET USER PROFILE (Protected)**
+//GET profil user in db
 app.get("/profile", authenticate, (req, res) => {
   const sql = "SELECT id, name, email FROM users WHERE id = ?";
   db.query(sql, [req.user.id], (err, result) => {
@@ -117,7 +117,7 @@ app.get("/profile", authenticate, (req, res) => {
   });
 });
 
-// **MULTER Storage for Image Uploads**
+//depozit multer img
 const storage = multer.diskStorage({
   destination: "./uploads/",
   filename: (req, file, cb) => {
@@ -127,7 +127,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// **PROTECTED IMAGE UPLOAD Route**
+//upload img
 app.post("/upload", authenticate, upload.single("image"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
@@ -140,7 +140,7 @@ app.post("/upload", authenticate, upload.single("image"), (req, res) => {
   });
 });
 
-// **GET ALL IMAGES**
+//interogare toate img in db
 app.get("/images", (req, res) => {
   const sql = "SELECT * FROM images";
   db.query(sql, (err, results) => {
@@ -150,7 +150,8 @@ app.get("/images", (req, res) => {
   });
 });
 
-// **Start Server**
+//start
 app.listen(5000, () => {
   console.log("🚀 Server running on port 5000");
 });
+
