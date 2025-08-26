@@ -7,7 +7,7 @@ export default function Login({ setAuth }) {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/profile", { withCredentials: true })
+    axios.get("/profile")
       .then(() => setAuth(true))
       .catch(() => setAuth(false));
   }, [setAuth]);
@@ -21,7 +21,7 @@ export default function Login({ setAuth }) {
     setError("");
     setIsLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/login", form, { withCredentials: true });
+      const res = await axios.post("/login", form);
       setAuth(true);
     } catch (err) {
       setError(err.response?.data?.error || "Login failed");
@@ -33,7 +33,7 @@ export default function Login({ setAuth }) {
   const handleLogout = async () => {
     setIsLoading(true);
     try {
-      await axios.post("http://localhost:5000/logout", {}, { withCredentials: true });
+      await axios.post("/logout", {});
       setAuth(false);
     } catch (err) {
       console.error("Logout failed", err);

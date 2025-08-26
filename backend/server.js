@@ -10,14 +10,17 @@ const { body, validationResult } = require("express-validator");
 const cookieParser = require("cookie-parser");
 
 const app = express();
-app.use(cors({ origin: "http://localhost:5173", credentials: true })); // Enable cookies
+app.use(cors({
+  origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+  credentials: true
+})); // Enable cookies
 app.use(express.json());
 app.use(cookieParser());
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 //conex db
 const db = mysql.createConnection({
-  host: "localhost",
+  host: "127.0.0.1",
   user: "root",
   password: "Dante1123",
   database: "photography_site",
@@ -35,10 +38,16 @@ const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 //middleware (+ protectie)
 const authenticate = (req, res, next) => {
   const token = req.cookies.token;
-  if (!token) return res.status(401).json({ error: "Unauthorized" });
+  if (!token) {
+    console.warn("Auth: No token cookie present");
+    return res.status(401).json({ error: "Unauthorized" });
+  }
 
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
-    if (err) return res.status(401).json({ error: "Invalid token" });
+    if (err) {
+      console.warn("Auth: Invalid token", err.message);
+      return res.status(401).json({ error: "Invalid token" });
+    }
     req.user = decoded;
     next();
   });
@@ -92,7 +101,7 @@ app.post("/login", async (req, res) => {
     if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
 
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "1h" });
-
+    console.log("Login success for", email, "userId:", user.id);
     res
       .cookie("token", token, {
         httpOnly: true,
@@ -102,6 +111,11 @@ app.post("/login", async (req, res) => {
       .json({ message: "Login successful", token });
   });
 });
+// Who am I (debug)
+app.get("/whoami", authenticate, (req, res) => {
+  res.json({ user: req.user });
+});
+
 
 //logout cookie 
 app.post("/logout", (req, res) => {
@@ -131,10 +145,13 @@ const upload = multer({ storage });
 app.post("/upload", authenticate, upload.single("image"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
-  const imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+  const imageUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
   const sql = "INSERT INTO images (url, user_id) VALUES (?, ?)";
   db.query(sql, [imageUrl, req.user.id], (err, result) => {
-    if (err) return res.status(500).json({ error: "Database error" });
+    if (err) {
+      console.error("DB insert error on /upload:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
 
     res.json({ message: "Image uploaded", url: imageUrl });
   });

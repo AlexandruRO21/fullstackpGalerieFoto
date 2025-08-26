@@ -15,7 +15,9 @@ export default function Signup({ setAuth }) {
     setError("");
     setIsLoading(true);
     try {
-      await axios.post("http://localhost:5000/signup", form);
+      await axios.post("/signup", form);
+      // Immediately log in after successful signup to receive auth cookie
+      await axios.post("/login", { email: form.email, password: form.password });
       setAuth(true);
     } catch (err) {
       setError(err.response?.data?.error || "Signup failed");

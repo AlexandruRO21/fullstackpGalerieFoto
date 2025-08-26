@@ -15,7 +15,7 @@ export function Gallery() {
 
   const fetchImages = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/images");
+      const res = await axios.get("/images");
       setImages(res.data);
     } catch (error) {
       console.error("Error fetching images", error);
@@ -35,7 +35,7 @@ export function Gallery() {
     formData.append("image", selectedFile);
 
     try {
-      await axios.post("http://localhost:5000/upload", formData, {
+      await axios.post("/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent) => {
           const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
